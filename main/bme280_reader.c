@@ -161,6 +161,7 @@ void bme280_reader_init()
     uint8_t data = 0;
     for (int i=0;i<10;i++)
     {
+        data = 0;
         bme280_I2C_bus_read(BME280_REGISTER_CHIPID, &data, sizeof(data));
         if (data == BME280_REGISTER_CHIPID_READ_VALUE) {
             break;
@@ -259,7 +260,7 @@ void bme280_reader_task()
             float t = compensateTemperature(t_fine); // C
             float p = compensatePressure(m_rawData.pressure, &m_calibData, t_fine);
             float h = compensateHumidity(m_rawData.humidity, &m_calibData, t_fine);
-          //  printf("Temp: %f Presure: %f Humid: %f\n", t, p, h);
+ //           printf("Temp: %f Presure: %f Humid: %f %ld\n", t, p, h, m_rawData.temperature);
 
             tcpip_setNewValue(SensorTypeTemperature, (double)(t));
             tcpip_setNewValue(SensorTypeHumid, (double)(h));

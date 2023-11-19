@@ -44,31 +44,46 @@ static char tcpip_getSensorTypeChar(SensorType type)
     return ' ';
 }
 
-static void tcpip_printLogValue(ClientSideValue *value, bool sentOk)
+static void tcpip_printLogValue(const char *buffer, bool sentOk)
 {
-    printf("O%c%f OK? %d\n", tcpip_getSensorTypeChar(value->m_type), value->m_value, (int)(sentOk));
+    printf("OK? %d : %s", (int)(sentOk), buffer);
 }
 
 
 static bool tcpip_sendValue(int sockClient, ClientSideValue *value)
 {
-    size_t i;
+    size_t i, c;
     char buffer[124];
-    sprintf(buffer, "O%c%f\n", tcpip_getSensorTypeChar(value->m_type), value->m_value);
+    memset(buffer, '\0', 124*sizeof(char));
+    snprintf(buffer, 120, "I%c%f", tcpip_getSensorTypeChar(value->m_type), value->m_value);
 
-    for (i=0;i<strlen(buffer);i++) {
+    c = strlen(buffer);
+    for (i=0;i<c;i++) {
         if (buffer[i] == ',') {
             buffer[i] = '.';
         }
     }
+    while (1) {
+        c = strlen(buffer);
+        if (c <= 5) {
+            break;
+        }
+        if (buffer[c-1] == '0' && buffer[c-2] != '.') {
+            buffer[c-1] = '\0';
+            continue;
+        }
+        break;
+    }
+    strcat(buffer, "\n");
+    c = strlen(buffer);
 
-    if (send(sockClient, buffer, strlen(buffer), 0) == (int)(strlen(buffer))) {
+    if (send(sockClient, buffer, c, 0) == (int)(c)) {
         value->m_sent = true;
-        tcpip_printLogValue(value, true);
+        tcpip_printLogValue(buffer, true);
         return true;
     }
 
-    tcpip_printLogValue(value, false);
+    tcpip_printLogValue(buffer, false);
     return false;
 }
 
@@ -91,6 +106,17 @@ static bool tcpip_setUp()
         printf("Connecting to server failed\n");
         return false;
     }
+
+    struct timeval tm;
+    tm.tv_sec = 1;
+    tm.tv_usec = 0;
+
+    int err = setsockopt(sock_cli, SOL_SOCKET, SO_RCVTIMEO, &tm, sizeof(tm));
+    if (err < 0) {
+        close(sock_cli);
+        return false;
+    }
+
     printf("Connected to server\n" );
     vTaskDelay(500/portTICK_PERIOD_MS);
 
@@ -132,15 +158,6 @@ static bool tcpip_setUp()
         if (tcp_fail_count > 10 || wifi_connect_get_connected() == 0) {
             break;
         }
-        struct timeval tm;
-        tm.tv_sec = 0;
-        tm.tv_usec = 1000;
-
-        int err = setsockopt(sock_cli, SOL_SOCKET, SO_RCVTIMEO, &tm, sizeof(tm));
-        if (err < 0) {
-            printf("setsockopt failed. error: %d", err);
-            break;
-        }
     }
 
     close(sock_cli);
@@ -149,7 +166,7 @@ static bool tcpip_setUp()
 
 void tcpip_sender_init()
 {
-    printf("tcp sender init()");
+    printf("tcp sender init().\n");
     m_nextItemToSend = 0;
     size_t i;
     for (i=0;i<(size_t)(SensorTypeNA);i++) {

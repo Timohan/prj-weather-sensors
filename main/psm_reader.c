@@ -57,11 +57,11 @@ static bool psm_setParticles(uint8_t *psmData, uint32_t size)
     }
 
     memcpy(&m_psmParsedData, (void *)buffer_u16, 30);
-    printf ("%d %d %d %d . %d %d %d %d %d %d\n", m_psmParsedData.framelen,
+/*    printf ("%d %d %d %d . %d %d %d %d %d %d\n", m_psmParsedData.framelen,
         m_psmParsedData.pm10_standard, m_psmParsedData.pm25_standard, m_psmParsedData.pm100_standard,
         m_psmParsedData.particles_03um, m_psmParsedData.particles_05um, m_psmParsedData.particles_10um,
         m_psmParsedData.particles_25um, m_psmParsedData.particles_50um, m_psmParsedData.particles_100um
-    );
+    );*/
 
     tcpip_setNewValue(SensorTypePM10, (double)(m_psmParsedData.pm10_standard));
     tcpip_setNewValue(SensorTypePM25, (double)(m_psmParsedData.pm25_standard));

@@ -48,7 +48,7 @@ void app_main(void)
 {
     printf("Start prj-weather-sensor!\n");
     wifi_connect();
-    xTaskCreate(&tcpip_sender_task, "tcpip_sender_task", 2048, NULL, 3, NULL);
+    xTaskCreate(&tcpip_sender_task, "tcpip_sender_task", 2048*3, NULL, 3, NULL);
     xTaskCreate(&bme280_task, "bme280_task", 2048, NULL, 10, NULL);
     xTaskCreatePinnedToCore(&psm_task, "psm_task", 2048, NULL, 10, NULL, 1);
 }
